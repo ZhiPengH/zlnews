@@ -36,7 +36,7 @@
 | 用途 | 位置与说明 |
 | --- | --- |
 | 当前工作记录 | `/Users/huangzhipeng/Documents/App-ZhiXing/NookDeck/docs/zonglan-news.md` |
-| 本文所在项目 | `/Volumes/HzpSSD/Development/qmreader`；这是 News 应用仓库，方寸认证代码在下面两个仓库中。 |
+| 本文所在项目 | `/Volumes/HzpSSD/Development/zlnews`；这是 News 应用仓库，方寸认证代码在下面两个仓库中。 |
 | 方寸开发 worktree | `/Volumes/HzpSSD/Development/worktrees/zonglan-news/fangcun`；主要文件 `plugin.js`、`tests/news.test.cjs`、`tests/viewswitch.test.cjs`、`scripts/provision-auth.py`。 |
 | 实际安装的方寸插件 | `/Users/huangzhipeng/.hermes/desktop-plugins/fangcun/plugin.js`。 |
 | 方寸旧 profile 仓库 | `/Users/huangzhipeng/.hermes/profiles/line/desktop-plugins/fangcun`；此前没有同步此副本，不能假定它是当前运行入口。 |
@@ -174,7 +174,7 @@ Hermes 使用仓库根目录依赖，不要假定 `apps/desktop/node_modules/.bi
 
 ```text
 请接手 Hermes 方寸的懒猫独立凭据接入项目。先阅读：
-/Volumes/HzpSSD/Development/qmreader/docs/fangcun-auth-handoff.md
+/Volumes/HzpSSD/Development/zlnews/docs/fangcun-auth-handoff.md
 以及其中链接的唯一当前工作记录。
 
 现有实现已经安装，并通过短时运行验收。请先只读核对源码、未提交内容和运行入口，向我简要说明当前状态与仍需验证的事项；后续改动按我下一条具体要求执行。保留其他任务的修改，不重新生成或撤销凭据，不自动提交、部署或重启应用。

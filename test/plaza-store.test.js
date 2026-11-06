@@ -6,11 +6,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-plaza-store-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-delete process.env.QMREADER_DB_FILE;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-plaza-store-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+delete process.env.ZLNEWS_DB_FILE;
 const store = require('../lib/store');
-const db = new DatabaseSync(path.join(testDataDir, 'qmreader.sqlite'));
+const db = new DatabaseSync(path.join(testDataDir, 'zlnews.sqlite'));
 db.exec('PRAGMA foreign_keys = ON');
 beforeEach(() => db.exec('DELETE FROM entries; DELETE FROM users; DELETE FROM source_overrides;'));
 after(() => {

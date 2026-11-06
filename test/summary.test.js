@@ -4,8 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-summary-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-summary-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 
 const deepseek = require('../lib/deepseek');
 const store = require('../lib/store');

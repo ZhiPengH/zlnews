@@ -7,6 +7,8 @@ RUN=${2:?}
 [[ "$RUN" =~ ^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{6}$ ]] || exit 2
 PROJECT=/home/cosiohzp/apps/zonglan-news
 BACKUP="/home/cosiohzp/apps/zonglan-news-backups/$RUN"
+# 服务原名 qmreader，2026-11 起改为 zlnews；先用 rename-service.sh 改好服务器上的 compose。
+SERVICE=zlnews
 cd "$PROJECT"
 for tool in docker tar sha256sum curl flock python3; do command -v "$tool" >/dev/null; done
 [ -f .env ] && [ -f docker-compose.yml ] && [ -d data ]
@@ -16,10 +18,10 @@ if [ "$ACTION" != check ]; then
   exec 9> .news-deploy.lock
   flock -n 9 || { echo 'Another deployment is running'; exit 1; }
 fi
-CID=$(docker compose ps -q qmreader)
+CID=$(docker compose ps -q "$SERVICE")
 [ -n "$CID" ] && [ "$(docker inspect -f '{{.State.Running}}' "$CID")" = true ]
 # Require the known single-service deployment layout. Never print expanded env configuration.
-[ "$(docker compose config --services)" = qmreader ]
+[ "$(docker compose config --services)" = "$SERVICE" ]
 IMAGE=$(docker inspect -f '{{.Image}}' "$CID")
 TARGET=$(docker compose config --images)
 [[ "$TARGET" =~ ^[a-zA-Z0-9._/:@-]+$ ]] && [[ "$TARGET" != *@* ]]
@@ -69,7 +71,7 @@ backup)
   printf '%s\n' "$TARGET" > "$BACKUP/target-image.txt"
   docker tag "$IMAGE" "zonglan-news-rollback:$RUN"
   NEED_START=1
-  docker compose stop -t 60 qmreader
+  docker compose stop -t 60 "$SERVICE"
   [ "$(docker inspect -f '{{.State.Running}}' "$CID")" = false ]
   tar --exclude=./node_modules --exclude=./.git --exclude=./.news-deploy.lock -czf "$BACKUP/project.tar.gz" .
   (cd "$BACKUP"; sha256sum project.tar.gz > project.sha256; sha256sum -c project.sha256)
@@ -118,10 +120,10 @@ PY
   docker tag "$NEW" "$TARGET"
   ACTIVATING=1
   touch "$BACKUP/activation-attempted"
-  docker compose up -d --no-build qmreader
+  docker compose up -d --no-build "$SERVICE"
   ok=0
   for attempt in $(seq 1 30); do
-    NEWCID=$(docker compose ps -q qmreader)
+    NEWCID=$(docker compose ps -q "$SERVICE")
     if [ -n "$NEWCID" ] && [ "$(docker inspect -f '{{.Image}}' "$NEWCID")" = "$(cat "$BACKUP/new-image-id.txt")" ] &&
        curl -fsS --max-time 3 http://127.0.0.1:3088/ > /dev/null &&
        curl -fsS --max-time 3 http://127.0.0.1:3088/api/me | python3 -c 'import json,sys; d=json.load(sys.stdin); assert (d.get("user") or {}).get("id")=="zonglan-personal"'; then
@@ -129,7 +131,7 @@ PY
     fi
     sleep 2
   done
-  [ "$ok" = 1 ] || { docker compose logs --tail=30 qmreader; exit 1; }
+  [ "$ok" = 1 ] || { docker compose logs --tail=30 "$SERVICE"; exit 1; }
   printf 'http-and-identity=passed\nmanual-qa=pending\n' > "$BACKUP/result.txt"
   echo '[news] HTTP, personal identity and running image checks passed'
   ;;

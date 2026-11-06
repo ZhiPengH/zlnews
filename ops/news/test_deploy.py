@@ -51,8 +51,8 @@ if tool == 'curl':
 if tool != 'docker': raise RuntimeError(tool)
 if a[:2] == ['compose', 'version']: print('mock compose'); sys.exit(0)
 if a[:2] == ['compose', 'config']:
-    if '--services' in a: print('qmreader')
-    elif '--images' in a: print('zonglan-news-qmreader')
+    if '--services' in a: print('zlnews')
+    elif '--images' in a: print('zonglan-news-zlnews')
     elif '--quiet' not in a: raise RuntimeError(a)
 elif a[:2] == ['compose', 'ps']: print('container') if s['running'] else None
 elif a[:2] == ['compose', 'stop']: s['running'] = False; save()
@@ -70,7 +70,7 @@ elif a[:2] == ['image', 'inspect']: print(s['tags'][a[-1]])
 elif a[:2] == ['compose', 'up']:
     s['running'] = False; save()
     if failure == 'activation': die()
-    s['image'] = s['tags']['zonglan-news-qmreader']; s['running'] = True; save()
+    s['image'] = s['tags']['zonglan-news-zlnews']; s['running'] = True; save()
 elif a[:2] == ['compose', 'logs']: print('mock container failure')
 else: raise RuntimeError('Unexpected docker command: ' + repr(a))
 '''
@@ -89,12 +89,12 @@ class DeploymentTests(unittest.TestCase):
         (self.project / ".env").write_text("SECRET=fixture-only\n")
         (self.project / "docker-compose.yml").write_text("fixture compose\n")
         (self.project / "data").mkdir()
-        for name in ("qmreader.sqlite", "qmreader.sqlite-wal", "cache.json"):
+        for name in ("zlnews.sqlite", "zlnews.sqlite-wal", "cache.json"):
             (self.project / "data" / name).write_bytes(b"preserve:" + name.encode())
         self.before = self.snapshot()
         self.statefile = self.root / "state.json"
         self.statefile.write_text(json.dumps({"running": True, "image": "sha256:old",
-                                            "tags": {"zonglan-news-qmreader": "sha256:old"}}))
+                                            "tags": {"zonglan-news-zlnews": "sha256:old"}}))
         binpath = self.root / "bin"
         binpath.mkdir()
         for name in ("docker", "curl", "flock", "sha256sum", "tar", "sleep", "ssh", "scp"):
@@ -159,7 +159,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(self.snapshot(), self.before)
         self.assertTrue(self.state()["running"])
         with tarfile.open(self.backup / "project.tar.gz") as tar:
-            for name in (".env", "data/qmreader.sqlite", "data/qmreader.sqlite-wal", "data/cache.json"):
+            for name in (".env", "data/zlnews.sqlite", "data/zlnews.sqlite-wal", "data/cache.json"):
                 self.assertEqual(tar.extractfile("./" + name).read(), self.before[name])
 
     def test_backup_failure_restarts_old_container(self):
@@ -187,7 +187,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(self.snapshot(), self.before)
         self.assertTrue(self.state()["running"])
         self.assertEqual(self.state()["image"], "sha256:old")
-        self.assertEqual(self.state()["tags"]["zonglan-news-qmreader"], "sha256:old")
+        self.assertEqual(self.state()["tags"]["zonglan-news-zlnews"], "sha256:old")
         self.assertFalse((self.backup / "activation-attempted").exists())
 
     def test_success_replaces_source_removes_stale_modules_and_checks_identity(self):
@@ -221,7 +221,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertTrue((self.backup / "project.tar.gz").exists())
         self.assertTrue((self.backup / "activation-attempted").exists())
         self.assertFalse((self.backup / "result.txt").exists())
-        self.assertEqual(self.state()["tags"]["zonglan-news-qmreader"], "sha256:new")
+        self.assertEqual(self.state()["tags"]["zonglan-news-zlnews"], "sha256:new")
         if failure == "activation":
             self.assertFalse(self.state()["running"])
         else:

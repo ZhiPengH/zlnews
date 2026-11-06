@@ -73,9 +73,9 @@ ssh linux "ls ~/apps/zonglan-news-backups/$RUN/ | sort"
 **续完命令**（镜像已建好、只差换容器的场景，2026-09-23 实测有效）：
 
 ```bash
-ssh linux 'cd ~/apps/zonglan-news && docker compose up -d --no-build qmreader'
+ssh linux 'cd ~/apps/zonglan-news && docker compose up -d --no-build zlnews'
 # 然后按脚本原逻辑验收：镜像匹配 + HTTP + 身份
-ssh linux 'NEWID=$(cat ~/apps/zonglan-news-backups/<RUN>/new-image-id.txt); CID=$(docker compose -f ~/apps/zonglan-news/docker-compose.yml ps -q qmreader); [ "$(docker inspect -f "{{.Image}}" $CID)" = "$NEWID" ] && echo IMAGE-OK; curl -fsS --max-time 5 http://127.0.0.1:3088/api/me | python3 -c "import json,sys; print((json.load(sys.stdin).get(\"user\") or {}).get(\"id\"))"'
+ssh linux 'NEWID=$(cat ~/apps/zonglan-news-backups/<RUN>/new-image-id.txt); CID=$(docker compose -f ~/apps/zonglan-news/docker-compose.yml ps -q zlnews); [ "$(docker inspect -f "{{.Image}}" $CID)" = "$NEWID" ] && echo IMAGE-OK; curl -fsS --max-time 5 http://127.0.0.1:3088/api/me | python3 -c "import json,sys; print((json.load(sys.stdin).get(\"user\") or {}).get(\"id\"))"'
 # 通过后补记标记
 ssh linux 'printf "http-and-identity=passed\nmanual-qa=pending\n" > ~/apps/zonglan-news-backups/<RUN>/result.txt'
 ```

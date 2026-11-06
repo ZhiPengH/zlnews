@@ -1,7 +1,7 @@
 # 私有 RSSHub（Twitter 通道）运维说明
 
 位置：Linux `~/apps/news-rsshub/`（compose.yaml + .env）。仅通过 Docker 内部网络
-`zonglan-news_default` 供 `qiaomu-qmreader` 访问，不发布任何端口，不走懒猫公网入口。
+`zonglan-news_default` 供 `zlnews` 容器访问，不发布任何端口，不走懒猫公网入口。
 
 ## 凭据（仅此一处）
 
@@ -34,7 +34,7 @@ docker image inspect --format '{{index .RepoDigests 0}}' diygod/rsshub:latest
 ```bash
 docker ps --filter name=rsshub-x          # Up
 # News 容器可达性（Node 26 自带 fetch）：
-docker exec qiaomu-qmreader node -e "fetch('http://rsshub-x:1200/').then(r=>console.log('rsshub',r.status)).catch(e=>console.log('ERR',e.message))"
+docker exec zlnews node -e "fetch('http://rsshub-x:1200/').then(r=>console.log('rsshub',r.status)).catch(e=>console.log('ERR',e.message))"
 # RSSHub 容器出网（应 200，无需代理；若非 200 再讨论 PROXY_URI）：
 docker exec rsshub-x node -e "fetch('https://x.com/').then(r=>console.log('x.com',r.status)).catch(e=>console.log('ERR',e.message))"
 ```

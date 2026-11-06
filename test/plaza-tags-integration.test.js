@@ -5,12 +5,12 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-plaza-tags-'));
-process.env.QMREADER_DATA_DIR = dataDir;
-delete process.env.QMREADER_DB_FILE;
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-plaza-tags-'));
+process.env.ZLNEWS_DATA_DIR = dataDir;
+delete process.env.ZLNEWS_DB_FILE;
 const store = require('../lib/store');
 const { createPlazaTagger } = require('../lib/plaza-tags');
-const db = new DatabaseSync(path.join(dataDir, 'qmreader.sqlite'));
+const db = new DatabaseSync(path.join(dataDir, 'zlnews.sqlite'));
 db.exec('PRAGMA foreign_keys = ON');
 beforeEach(() => db.exec('DELETE FROM entries; DELETE FROM users;'));
 after(() => {

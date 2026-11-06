@@ -6,14 +6,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-personal-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-delete process.env.QMREADER_DB_FILE;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-personal-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+delete process.env.ZLNEWS_DB_FILE;
 const store = require('../lib/store');
 after(() => fs.rmSync(testDataDir, { recursive: true, force: true }));
 
 test('dedicated personal identity is lazy, never inherits historical users, and persists reading state across a process restart', () => {
-  const db = new DatabaseSync(path.join(testDataDir, 'qmreader.sqlite'));
+  const db = new DatabaseSync(path.join(testDataDir, 'zlnews.sqlite'));
   assert.equal(db.prepare('SELECT COUNT(*) AS total FROM users').get().total, 0);
   db.prepare(`INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, updated_at)
     VALUES ('legacy-admin', 'legacy@example.com', 'Old Admin', 'admin', 'old-hash', 'old-salt', 1, 1)`).run();

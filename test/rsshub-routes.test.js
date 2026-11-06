@@ -4,9 +4,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-rsshub-routes-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-delete process.env.QMREADER_DB_FILE;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-rsshub-routes-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+delete process.env.ZLNEWS_DB_FILE;
 process.env.RSSHUB_INTERNAL_ORIGIN = 'http://rsshub-x:1200';
 
 const routing = require('../lib/rsshub-routing');

@@ -5,8 +5,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'news-subscriptions-'));
-process.env.QMREADER_DATA_DIR = dir;
-process.env.QMREADER_DB_FILE = path.join(dir, 'qmreader.sqlite');
+process.env.ZLNEWS_DATA_DIR = dir;
+process.env.ZLNEWS_DB_FILE = path.join(dir, 'zlnews.sqlite');
 const store = require('../lib/store');
 const subscriptions = require('../lib/subscriptions');
 const fetcher = require('../lib/fetcher');
@@ -92,7 +92,7 @@ test('HTTP personal subscription routes enforce origin, CRUD contracts and keep 
   const preload = path.join(httpDir, 'preload.cjs');
   fs.writeFileSync(preload, `require(${JSON.stringify(path.join(root, 'lib/fetcher'))}).assertPublicHttpUrl = async url => url;`);
   const child = spawn(process.execPath, ['--require', preload, 'server.js'], {
-    cwd: root, env: { ...process.env, QMREADER_DATA_DIR: httpDir, QMREADER_DB_FILE: path.join(httpDir, 'qmreader.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1', PUBLIC_ORIGIN: '' }, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: root, env: { ...process.env, ZLNEWS_DATA_DIR: httpDir, ZLNEWS_DB_FILE: path.join(httpDir, 'zlnews.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1', PUBLIC_ORIGIN: '' }, stdio: ['ignore', 'pipe', 'pipe'],
   });
   try {
     const port = await new Promise((resolve, reject) => {
