@@ -3774,6 +3774,11 @@ const httpServer = app.listen(PORT, HOST, () => {
   console.log(`QMReader listening on http://${HOST}:${httpServer.address().port}`);
   store.getPersonalUser();
   fetcher.loadDisk();
+  try {
+    fetcher.repairXArticleEntries();
+  } catch (error) {
+    console.warn('[x-article] repair skipped:', error.message || error);
+  }
   scheduleStartupRefresh();
   scheduleDailyRefresh();
   offlinePrefetch.scheduleOfflinePrefetch();
