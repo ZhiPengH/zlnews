@@ -8,9 +8,9 @@ const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 const vm = require('node:vm');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-twitter-avatar-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-delete process.env.QMREADER_DB_FILE;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-twitter-avatar-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+delete process.env.ZLNEWS_DB_FILE;
 const fetcher = require('../lib/fetcher');
 const appSource = fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8');
 
@@ -23,8 +23,8 @@ function startServer({ dir, rsshubOrigin, preload, fetchLog }) {
     env: {
       ...process.env,
       RSSHUB_INTERNAL_ORIGIN: rsshubOrigin,
-      QMREADER_DATA_DIR: dir,
-      QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'),
+      ZLNEWS_DATA_DIR: dir,
+      ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'),
       AVATAR_FETCH_LOG: fetchLog,
       NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${preload}`].filter(Boolean).join(' '),
       HOST: '127.0.0.1',
@@ -119,7 +119,7 @@ test('Twitter source avatar bytes are fetched once and remain cached across serv
   });
   await new Promise(resolve => rsshub.listen(0, '127.0.0.1', resolve));
   const rsshubOrigin = `http://127.0.0.1:${rsshub.address().port}`;
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-avatar-cache-e2e-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-avatar-cache-e2e-'));
   const root = path.join(__dirname, '..');
   const preload = path.join(dir, 'avatar-fetch-mock.cjs');
   const fetchLog = path.join(dir, 'avatar-fetches.log');

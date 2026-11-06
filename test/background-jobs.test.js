@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-background-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-background-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 
 const fetcher = require('../lib/fetcher');
 const jobs = require('../lib/background-jobs');

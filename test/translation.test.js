@@ -4,8 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-translation-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-translation-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 
 const deepseek = require('../lib/deepseek');
 const store = require('../lib/store');
@@ -13,7 +13,7 @@ const store = require('../lib/store');
 // Historical identities are fixtures, not a production account-creation API.
 function fixtureUser({ email, displayName, role = 'user' }) {
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(testDataDir, 'qmreader.sqlite'));
+  const db = new DatabaseSync(path.join(testDataDir, 'zlnews.sqlite'));
   const id = require('node:crypto').randomUUID();
   const t = Date.now();
   db.prepare(`INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, updated_at)

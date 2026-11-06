@@ -11,7 +11,7 @@ test('explicit public origin permits proxy Host mismatch and rejects foreign ori
   const root = path.join(__dirname, '..');
   const child = spawn(process.execPath, ['server.js'], {
     cwd: root,
-    env: { ...process.env, PUBLIC_ORIGIN: 'https://news.example.test', QMREADER_DATA_DIR: dir, QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1' },
+    env: { ...process.env, PUBLIC_ORIGIN: 'https://news.example.test', ZLNEWS_DATA_DIR: dir, ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   try {

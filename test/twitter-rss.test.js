@@ -8,9 +8,9 @@ const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 
 // Data dir must be pinned before any module loads its own path resolution.
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-twitter-rss-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-delete process.env.QMREADER_DB_FILE;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-twitter-rss-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+delete process.env.ZLNEWS_DB_FILE;
 process.env.RSSHUB_INTERNAL_ORIGIN = 'http://rsshub-x:1200';
 
 const routing = require('../lib/rsshub-routing');
@@ -152,8 +152,8 @@ test('preview and subscribe use the internal channel without leaking it', async 
     env: {
       ...process.env,
       RSSHUB_INTERNAL_ORIGIN: stubBase,
-      QMREADER_DATA_DIR: dir,
-      QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'),
+      ZLNEWS_DATA_DIR: dir,
+      ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'),
       HOST: '127.0.0.1', PORT: '0',
       STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1', TWITTER_SWEEP_INTERVAL_MS: '-1',
     },
@@ -213,8 +213,8 @@ test('public feed preview failures are not mislabeled as internal channel', asyn
     env: {
       ...process.env,
       RSSHUB_INTERNAL_ORIGIN: stubBase,
-      QMREADER_DATA_DIR: dir,
-      QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'),
+      ZLNEWS_DATA_DIR: dir,
+      ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'),
       HOST: '127.0.0.1', PORT: '0',
       STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1', TWITTER_SWEEP_INTERVAL_MS: '-1',
     },
@@ -264,8 +264,8 @@ test('36kr newsflashes preview goes through the internal channel end to end', as
     env: {
       ...process.env,
       RSSHUB_INTERNAL_ORIGIN: stubBase,
-      QMREADER_DATA_DIR: dir,
-      QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'),
+      ZLNEWS_DATA_DIR: dir,
+      ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'),
       HOST: '127.0.0.1', PORT: '0',
       STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1', TWITTER_SWEEP_INTERVAL_MS: '-1',
     },

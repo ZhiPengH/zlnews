@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-if (!process.env.QMREADER_WORKER_KIND) {
-  process.env.QMREADER_WORKER_KIND = process.send ? 'ipc' : 'cli';
+if (!process.env.ZLNEWS_WORKER_KIND && !process.env.QMREADER_WORKER_KIND) {
+  process.env.ZLNEWS_WORKER_KIND = process.send ? 'ipc' : 'cli';
 }
 const { runRefreshJob } = require('../lib/background-jobs');
 

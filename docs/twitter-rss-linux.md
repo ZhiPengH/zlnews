@@ -20,7 +20,7 @@
 
 ### 应用基线
 
-核对仓库 `/Volumes/HzpSSD/Development/qmreader`，分支 `feat/twitter-rss-linux`，基线 `6391e00`。创建分支后未改业务代码；原有未跟踪文件 `test/plaza.test.js` 保留，不能纳入本功能成果。
+核对仓库 `/Volumes/HzpSSD/Development/zlnews`，分支 `feat/twitter-rss-linux`，基线 `6391e00`。创建分支后未改业务代码；原有未跟踪文件 `test/plaza.test.js` 保留，不能纳入本功能成果。
 
 | 入口 | 当前行为 | 实施影响 |
 | --- | --- | --- |

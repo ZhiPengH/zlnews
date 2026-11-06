@@ -1,12 +1,11 @@
 {
-  "name": "qmreader",
+  "name": "zlnews",
   "version": "1.0.0",
-  "description": "Neutral online RSS reader powered by RSSHub and direct feeds",
+  "description": "纵览News: self-hosted personal RSS reader based on qmreader",
   "license": "MIT",
-  "homepage": "https://rss.qiaomu.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joeseesun/qmreader.git"
+    "url": "https://github.com/ZhiPengH/zlnews.git"
   },
   "keywords": [
     "rss",

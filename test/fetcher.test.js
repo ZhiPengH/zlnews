@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-fetcher-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-fetcher-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 
 const fetcher = require('../lib/fetcher');
 
@@ -521,8 +521,8 @@ test('cache write lock serializes two real processes', async () => {
     LOCK_LOG: logFile,
     LOCK_HOLD_MS: '150',
     LOCK_START_AT: String(startAt),
-    QMREADER_DATA_DIR: testDataDir,
-    QMREADER_DB_FILE: path.join(testDataDir, `cache-lock-${id}.sqlite`),
+    ZLNEWS_DATA_DIR: testDataDir,
+    ZLNEWS_DB_FILE: path.join(testDataDir, `cache-lock-${id}.sqlite`),
   })));
   const lines = fs.readFileSync(logFile, 'utf8').trim().split(/\r?\n/);
   assert.equal(lines.length, 4);

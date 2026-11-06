@@ -18,8 +18,8 @@ global.fetch = function mockedFetch(url, init) {
   return realFetch(url, init);
 };
 `);
-process.env.QMREADER_DATA_DIR = dir;
-process.env.QMREADER_DB_FILE = path.join(dir, 'qmreader.sqlite');
+process.env.ZLNEWS_DATA_DIR = dir;
+process.env.ZLNEWS_DB_FILE = path.join(dir, 'zlnews.sqlite');
 
 const deepseek = require('../lib/deepseek');
 

@@ -3,11 +3,11 @@
 Mac 入口（任意目录执行）：
 
 ```bash
-bash /Volumes/HzpSSD/Development/qmreader/ops/news/deploy.sh check
-bash /Volumes/HzpSSD/Development/qmreader/ops/news/deploy.sh deploy
+bash /Volumes/HzpSSD/Development/zlnews/ops/news/deploy.sh check
+bash /Volumes/HzpSSD/Development/zlnews/ops/news/deploy.sh deploy
 ```
 
-`check` 跑本地测试、生成源码快照，再只读检查 Linux，不停服、不上传。`deploy` 包含这些检查，按下面顺序执行。目标固定为 SSH 别名 `linux`、`/home/cosiohzp/apps/zonglan-news`，只处理 qmreader。要求 SSH 密钥已能无交互连接。
+`check` 跑本地测试、生成源码快照，再只读检查 Linux，不停服、不上传。`deploy` 包含这些检查，按下面顺序执行。目标固定为 SSH 别名 `linux`、`/home/cosiohzp/apps/zonglan-news`，只处理 zlnews 服务。要求 SSH 密钥已能无交互连接。
 
 ## 流程
 
@@ -15,7 +15,7 @@ bash /Volumes/HzpSSD/Development/qmreader/ops/news/deploy.sh deploy
 2. Linux 锁定部署操作；保存正在运行的旧镜像 ID 与独立回退标签；停容器最多等待 60 秒，再归档完整项目（包括 `.env` 和整个 SQLite/WAL 数据目录，排除 node_modules/.git）。校验归档后恢复旧容器，等待首页可用。
 3. SCP 上传源码包到独立备份目录，校验 SHA256。不会把半上传文件写入生产源码。
 4. 从暂存源码构建独立版本镜像；此时旧容器继续运行。
-5. 构建成功才替换指定运行源码（旧文件另存），更新 Compose 使用的镜像标签并 `up -d --no-build qmreader`。
+5. 构建成功才替换指定运行源码（旧文件另存），更新 Compose 使用的镜像标签并 `up -d --no-build zlnews`。
 6. 有限重试首页、`/api/me` 固定身份及实际运行镜像检查。通过后标记机器检查通过，人工验收仍为 pending。
 7. 用户测试 Hermes/iPhone 阅读、收藏、取消、刷新；有持久化相关改动再做重启验收。人工通过后再审阅并 commit，push 独立决定。
 
@@ -55,3 +55,20 @@ python3 ops/news/test_deploy.py
 ```
 
 模拟测试在临时目录使用假的 Docker/curl/flock，不连接 Linux、不运行真实 Docker；实际运维验收需用户首次运行 deploy 并完成真机检查。
+
+## 2026-11 改名为 zlnews
+
+服务、容器原名 `qmreader` / `qiaomu-qmreader`，改为 `zlnews`；数据库 `qmreader.sqlite` 改为 `zlnews.sqlite`。
+`remote.sh` 只认服务名 `zlnews`，旧服务器要先跑一次性脚本：
+
+```bash
+ssh linux bash -s -- "$(date -u +%Y%m%dT%H%M%SZ)" < ops/news/rename-service.sh
+```
+
+它只改 compose 的服务名和容器名，用原镜像重新拉起，失败时恢复原 compose；之后正常 `deploy.sh deploy`。
+新代码首次启动时把 `data/qmreader.sqlite`（及 `-wal`、`-shm`）改名为 `zlnews.sqlite`。
+
+**回退注意：** 新代码启动后再回退到改名前的镜像，旧代码找不到 `qmreader.sqlite` 会新建空库。
+回退前先停容器，把 `zlnews.sqlite*` 改回 `qmreader.sqlite*`，再用 `rename-service.sh` 备份目录里的
+`docker-compose.yml.before` 恢复服务名。
+

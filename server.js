@@ -11,6 +11,8 @@ const store = require('./lib/store');
 const subscriptions = require('./lib/subscriptions');
 const routing = require('./lib/rsshub-routing');
 const twitterRefresh = require('./lib/twitter-refresh');
+const runtimeEnv = require('./lib/runtime-env');
+const rewritePrompts = require('./lib/rewrite-prompts');
 const { rankPlazaEntries } = require('./lib/plaza');
 const { createPlazaTagger } = require('./lib/plaza-tags');
 // Automatic spending is opt-in pending a confirmed budget. Manual default: 100/day.
@@ -64,32 +66,32 @@ const DOMPURIFY_VERSION = JSON.parse(fs.readFileSync(
   'utf8',
 )).version;
 const REFRESH_WORKER_PATH = path.join(__dirname, 'scripts', 'refresh-worker.js');
-const DEFAULT_TITLE = 'QMReader · RSS 阅读器';
-const DEFAULT_DESCRIPTION = '围绕 RSS 文章沉淀中文翻译、乔木风格重写、人工点评和文章对话的公开阅读站。';
+const DEFAULT_TITLE = '纵览News · RSS 阅读器';
+const DEFAULT_DESCRIPTION = '围绕 RSS 文章沉淀中文翻译、AI 改写、人工点评和文章对话的个人阅读站。';
 const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const UMAMI_WEBSITE_ID = String(process.env.UMAMI_WEBSITE_ID || '').trim();
-const UMAMI_SRC = String(process.env.UMAMI_SRC || 'https://umami.qiaomu.ai/script.js').trim();
+const UMAMI_SRC = String(process.env.UMAMI_SRC || '').trim();
 const ARTICLE_SHORT_ID_LENGTH = 12;
 const ASSET_DIRECTORY_META = {
   translation: {
     label: '中文翻译',
-    description: 'QMReader 已沉淀中文双语对照翻译的公开 RSS 文章目录。',
+    description: '纵览News 已沉淀中文双语对照翻译的公开 RSS 文章目录。',
   },
   rewrite: {
-    label: '乔木风格重写',
-    description: 'QMReader 已沉淀乔木风格中文重写的公开 RSS 文章目录。',
+    label: 'AI 改写',
+    description: '纵览News 已沉淀 AI 中文改写的公开 RSS 文章目录。',
   },
   comments: {
     label: '人工点评',
-    description: 'QMReader 已沉淀人工点评的公开 RSS 文章目录。',
+    description: '纵览News 已沉淀人工点评的公开 RSS 文章目录。',
   },
   annotations: {
     label: '划线点评',
-    description: 'QMReader 已沉淀文章划线点评和段落讨论的公开 RSS 文章目录。',
+    description: '纵览News 已沉淀文章划线点评和段落讨论的公开 RSS 文章目录。',
   },
   chat: {
     label: '文章对话',
-    description: 'QMReader 已沉淀公开 AI 文章对话的 RSS 文章目录。',
+    description: '纵览News 已沉淀公开 AI 文章对话的 RSS 文章目录。',
   },
 };
 
@@ -140,7 +142,7 @@ let autoRewriteRunning = false;
 let autoRewriteLast = null;
 const sourceInteractionRefreshAt = new Map();
 const faviconCache = new Map();
-const FAVICON_DISK_CACHE_FILE = path.join(process.env.QMREADER_DATA_DIR ? path.resolve(process.env.QMREADER_DATA_DIR) : path.join(__dirname, 'data'), 'favicon-cache.json');
+const FAVICON_DISK_CACHE_FILE = path.join(runtimeEnv.DATA_DIR, 'favicon-cache.json');
 const faviconInFlight = new Map();
 const FAVICON_MAX_BYTES = 256 * 1024;
 const FAVICON_CACHE_MAX_ENTRIES = 512;
@@ -253,7 +255,7 @@ async function fetchFaviconCandidate(url, deadline) {
       deadline,
       maxBytes: FAVICON_MAX_BYTES,
       maxRedirects: 4,
-      headers: { 'User-Agent': 'QMReader favicon proxy/1.0' },
+      headers: { 'User-Agent': '纵览News favicon proxy/1.0' },
     });
     if (result.status < 200 || result.status >= 300) return null;
     const type = fetcher.safeRasterMimeType(result.buffer);
@@ -424,7 +426,7 @@ function translationBlockText(pair) {
 }
 
 function publicUrl(req, target = req.originalUrl || '/') {
-  const host = req.get('host') || 'rss.qiaomu.ai';
+  const host = req.get('host') || 'localhost';
   const proto = req.protocol || (req.get('x-forwarded-proto') || 'https').split(',')[0];
   return `${proto}://${host}${target}`;
 }
@@ -565,28 +567,28 @@ function assetDirectoryMeta(req) {
   if (!type) {
     if (q) {
       return {
-        title: `${sortPrefix}公开资产搜索：${q} · QMReader`,
-        description: `搜索“${q}”相关的公开资产，包含中文翻译、乔木风格重写、划线点评、人工点评和文章对话。${sortDescription}${searchSuffix}`,
+        title: `${sortPrefix}公开资产搜索：${q} · 纵览News`,
+        description: `搜索“${q}”相关的公开资产，包含中文翻译、AI 改写、划线点评、人工点评和文章对话。${sortDescription}${searchSuffix}`,
       };
     }
     return {
-      title: stats.assetCount ? `${sortPrefix}公开资产（${stats.assetCount} 条） · QMReader` : `${sortPrefix}公开资产 · QMReader`,
+      title: stats.assetCount ? `${sortPrefix}公开资产（${stats.assetCount} 条） · 纵览News` : `${sortPrefix}公开资产 · 纵览News`,
       description: stats.assetCount
-        ? `QMReader 已沉淀 ${stats.assetCount} 条公开资产，覆盖 ${stats.entryCount} 篇文章，包括中文翻译、乔木风格重写、划线点评、人工点评和文章对话。${sortDescription}${latestSuffix}`
+        ? `纵览News 已沉淀 ${stats.assetCount} 条公开资产，覆盖 ${stats.entryCount} 篇文章，包括中文翻译、AI 改写、划线点评、人工点评和文章对话。${sortDescription}${latestSuffix}`
         : DEFAULT_DESCRIPTION,
     };
   }
   const meta = ASSET_DIRECTORY_META[type];
   if (q) {
     return {
-      title: `${sortPrefix}${meta.label}资产搜索：${q} · QMReader`,
+      title: `${sortPrefix}${meta.label}资产搜索：${q} · 纵览News`,
       description: `搜索“${q}”相关的${meta.label}资产。${sortDescription}${searchSuffix}`,
     };
   }
   return {
-    title: stats.assetCount ? `${sortPrefix}${meta.label}资产（${stats.assetCount} 条） · QMReader` : `${sortPrefix}${meta.label}资产 · QMReader`,
+    title: stats.assetCount ? `${sortPrefix}${meta.label}资产（${stats.assetCount} 条） · 纵览News` : `${sortPrefix}${meta.label}资产 · 纵览News`,
     description: stats.assetCount
-      ? `QMReader 已沉淀 ${stats.assetCount} 条${meta.label}资产，覆盖 ${stats.entryCount} 篇文章，可通过网页或 RSS 浏览。${sortDescription}${latestSuffix}`
+      ? `纵览News 已沉淀 ${stats.assetCount} 条${meta.label}资产，覆盖 ${stats.entryCount} 篇文章，可通过网页或 RSS 浏览。${sortDescription}${latestSuffix}`
       : meta.description,
   };
 }
@@ -610,10 +612,10 @@ function contributorDirectoryMeta(req = null) {
     : '';
   return {
     contributors,
-    title: contributors.length ? `${sortTitle}（${contributors.length} 人） · QMReader` : `${sortTitle} · QMReader`,
+    title: contributors.length ? `${sortTitle}（${contributors.length} 人） · 纵览News` : `${sortTitle} · 纵览News`,
     description: contributors.length
-      ? `QMReader 有 ${contributors.length} 位用户沉淀了 ${totalAssets} 条公开翻译、重写、划线点评、点评和文章对话。${helpfulSuffix}${sortDescription}${latestAt ? `最新更新 ${formatShanghaiMinute(latestAt)}。` : ''}`
-      : '浏览在 QMReader 沉淀过公开翻译、重写、划线点评、点评和文章对话的贡献榜。',
+      ? `纵览News 有 ${contributors.length} 位用户沉淀了 ${totalAssets} 条公开翻译、重写、划线点评、点评和文章对话。${helpfulSuffix}${sortDescription}${latestAt ? `最新更新 ${formatShanghaiMinute(latestAt)}。` : ''}`
+      : '浏览在 纵览News 沉淀过公开翻译、重写、划线点评、点评和文章对话的贡献榜。',
     latestAt,
   };
 }
@@ -670,13 +672,13 @@ function contributorPageMetaForId(id, { type = '', sort = 'latest' } = {}) {
     : '';
   const sortSentence = assetSort === 'helpful' ? '当前按读者有用反馈优先浏览。' : '';
   const title = typeMeta
-    ? `${sortPrefix}${displayName} 的${typeMeta.label}（${visibleAssetCount} 条） · QMReader`
-    : `${sortPrefix}${displayName} 的公开资产（${assetCount} 条） · QMReader`;
+    ? `${sortPrefix}${displayName} 的${typeMeta.label}（${visibleAssetCount} 条） · 纵览News`
+    : `${sortPrefix}${displayName} 的公开资产（${assetCount} 条） · 纵览News`;
   const description = typeMeta
-    ? `${displayName} 在 QMReader 沉淀了 ${visibleAssetCount} 条${typeMeta.label}资产。${helpfulSentence}${sortSentence}${typeLatestAt ? `最新更新 ${formatShanghaiMinute(typeLatestAt)}。` : ''}`
+    ? `${displayName} 在 纵览News 沉淀了 ${visibleAssetCount} 条${typeMeta.label}资产。${helpfulSentence}${sortSentence}${typeLatestAt ? `最新更新 ${formatShanghaiMinute(typeLatestAt)}。` : ''}`
     : assetCount
-      ? `${displayName} 在 QMReader 沉淀了 ${assetCount} 条公开资产，包括 ${translationCount} 条中文翻译、${rewriteCount} 条乔木风格重写、${annotationCount} 条划线点评、${commentCount} 条人工点评和 ${chatCount} 条文章对话。${helpfulSentence}${sortSentence}${latestAt ? `最新更新 ${formatShanghaiMinute(latestAt)}。` : ''}`
-      : `${displayName} 的 QMReader 个人主页。`;
+      ? `${displayName} 在 纵览News 沉淀了 ${assetCount} 条公开资产，包括 ${translationCount} 条中文翻译、${rewriteCount} 条AI 改写、${annotationCount} 条划线点评、${commentCount} 条人工点评和 ${chatCount} 条文章对话。${helpfulSentence}${sortSentence}${latestAt ? `最新更新 ${formatShanghaiMinute(latestAt)}。` : ''}`
+      : `${displayName} 的 纵览News 个人主页。`;
   return {
     contributor: { ...contributor, displayName },
     translations,
@@ -795,7 +797,7 @@ function socialMetaTags(req, entry) {
     `<meta name="description" content="${escapeHtml(description)}" />`,
     shouldNoindexRequest(req, entry) ? `<meta name="robots" content="noindex,follow" />` : '',
     `<link rel="canonical" href="${escapeHtml(url)}" />`,
-    `<meta property="og:site_name" content="QMReader" />`,
+    `<meta property="og:site_name" content="纵览News" />`,
     `<meta property="og:type" content="${entry ? 'article' : contributorPage ? 'profile' : 'website'}" />`,
     `<meta property="og:title" content="${escapeHtml(title)}" />`,
     `<meta property="og:description" content="${escapeHtml(description)}" />`,
@@ -863,7 +865,7 @@ function shareStructuredData(req, { entry, focus, directoryMeta, contributorPage
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'QMReader',
+    name: '纵览News',
     url,
     description,
   };
@@ -938,7 +940,7 @@ function contributorPageStructuredData(req, contributorPage, { title, descriptio
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    name: title.replace(/\s·\sQMReader$/, ''),
+    name: title.replace(/\s·\s纵览News$/, ''),
     description,
     url,
     isPartOf: siteStructuredData(req),
@@ -963,7 +965,7 @@ function contributorPageStructuredData(req, contributorPage, { title, descriptio
 function siteStructuredData(req) {
   return {
     '@type': 'WebSite',
-    name: 'QMReader',
+    name: '纵览News',
     url: publicUrl(req, '/'),
   };
 }
@@ -991,7 +993,7 @@ function assetDirectoryStructuredData(req, directoryMeta, { title, description, 
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: title.replace(/\s·\sQMReader$/, ''),
+    name: title.replace(/\s·\s纵览News$/, ''),
     description,
     url,
     isPartOf: siteStructuredData(req),
@@ -1024,10 +1026,10 @@ function entryStructuredData(req, entry, { focus, title, description, modifiedTi
     datePublished: entry.published || undefined,
     dateModified: modifiedTime || entryLastModified(entry) || entry.published || undefined,
     image: image || undefined,
-    author: structuredAuthor(entry.author || sourceNameForEntry(entry) || 'QMReader'),
+    author: structuredAuthor(entry.author || sourceNameForEntry(entry) || '纵览News'),
     publisher: {
       '@type': 'Organization',
-      name: 'QMReader',
+      name: '纵览News',
       url: publicUrl(req, '/'),
     },
     inLanguage: entry.titleZh || entry.summaryZh ? 'zh-CN' : undefined,
@@ -1052,7 +1054,7 @@ function entryAssetStructuredPart(req, entry, focus) {
     url: itemUrl,
     dateCreated: timestampIso(preview.at) || undefined,
     dateModified: timestampIso(preview.at) || undefined,
-    author: structuredAuthor(preview.author || preview.model || 'QMReader'),
+    author: structuredAuthor(preview.author || preview.model || '纵览News'),
     isPartOf: entryPublicUrl(req, entry),
   };
   if (type === 'comments' || type === 'annotations') return { '@type': 'Comment', ...base };
@@ -1068,8 +1070,8 @@ function entryAssetStructuredPart(req, entry, focus) {
 }
 
 function structuredAuthor(name) {
-  const text = clipText(name || 'QMReader', 80);
-  const isOrg = /ai|deepseek|openai|anthropic|claude|gemini|gpt|qmreader/i.test(text);
+  const text = clipText(name || '纵览News', 80);
+  const isOrg = /ai|deepseek|openai|anthropic|claude|gemini|gpt|zlnews/i.test(text);
   return {
     '@type': isOrg ? 'Organization' : 'Person',
     name: text,
@@ -1091,16 +1093,16 @@ function assetShareTitle(entry, focus = '', preview = null) {
     : '';
   const articleTitle = clipText(snapshotTitle || entry.titleZh || entry.title || '文章', 72);
   const label = ASSET_DIRECTORY_META[focus]?.label || '';
-  if (!label) return `${articleTitle} · QMReader`;
+  if (!label) return `${articleTitle} · 纵览News`;
   const identity = assetShareIdentity(focus, preview);
-  return `${identity || label} · ${articleTitle} · QMReader`;
+  return `${identity || label} · ${articleTitle} · 纵览News`;
 }
 
 function assetShareIdentity(focus = '', preview = null) {
   if (!preview) return '';
   const author = clipText(preview.author || preview.model || '', 24);
   if (focus === 'translation') return author ? `${author}的中文翻译` : '中文翻译';
-  if (focus === 'rewrite') return author ? `${author}的乔木重写` : '乔木风格重写';
+  if (focus === 'rewrite') return author ? `${author}的 AI 改写` : 'AI 改写';
   if (focus === 'annotations') return author ? `${author}的划线点评` : '划线点评';
   if (focus === 'comments') return author ? `${author}的点评` : '人工点评';
   if (focus === 'chat') {
@@ -1113,7 +1115,7 @@ function assetShareIdentity(focus = '', preview = null) {
 
 function assetFeedTitle(entry, type, preview = null) {
   return assetShareTitle(entry, type, preview)
-    .replace(/\s·\sQMReader$/, '')
+    .replace(/\s·\s纵览News$/, '')
     .replace(/\s·\s/, '：');
 }
 
@@ -1378,7 +1380,7 @@ function rssAlternateTag(req) {
   const sort = isAssetDirectoryRequest(req) ? requestAssetSort(req) : 'latest';
   const meta = type ? ASSET_DIRECTORY_META[type] : null;
   const sortPrefix = sort === 'helpful' ? '有用 · ' : '';
-  const title = meta ? `QMReader ${sortPrefix}${meta.label}资产 RSS` : `QMReader ${sortPrefix}公开资产 RSS`;
+  const title = meta ? `纵览News ${sortPrefix}${meta.label}资产 RSS` : `纵览News ${sortPrefix}公开资产 RSS`;
   return `<link rel="alternate" type="application/rss+xml" title="${escapeHtml(title)}" href="${escapeHtml(assetFeedUrl(req, type, sort))}" />`;
 }
 
@@ -1474,7 +1476,7 @@ function publicAssetFeedItems(req, type = '') {
             source,
             at,
             helpfulCount,
-            guid: `qmreader:${entry.id}:${itemType}:${preview.id || at}`,
+            guid: `zlnews:${entry.id}:${itemType}:${preview.id || at}`,
           };
         }));
     })
@@ -1508,7 +1510,7 @@ function contributorFeedItems(req, contributorPage) {
       description: helpfulCount ? `有用 ${helpfulCount} 次｜${baseDescription}` : baseDescription,
       source: [preview.author, preview.model].filter(Boolean).join(' · '),
       at: Number(preview.at) || 0,
-      guid: `qmreader:contributor:${contributorPage.contributor.id}:translation:${item.id}`,
+      guid: `zlnews:contributor:${contributorPage.contributor.id}:translation:${item.id}`,
     };
   });
   const rewrites = (contributorPage.rewrites || []).map(item => {
@@ -1530,7 +1532,7 @@ function contributorFeedItems(req, contributorPage) {
       description: helpfulCount ? `有用 ${helpfulCount} 次｜${baseDescription}` : baseDescription,
       source: [preview.author, preview.model].filter(Boolean).join(' · '),
       at: Number(preview.at) || 0,
-      guid: `qmreader:contributor:${contributorPage.contributor.id}:rewrite:${item.id}`,
+      guid: `zlnews:contributor:${contributorPage.contributor.id}:rewrite:${item.id}`,
     };
   });
   const comments = (contributorPage.comments || []).map(comment => {
@@ -1552,7 +1554,7 @@ function contributorFeedItems(req, contributorPage) {
       description: helpfulCount ? `有用 ${helpfulCount} 次｜${baseDescription}` : baseDescription,
       source: preview.author,
       at: Number(preview.at) || 0,
-      guid: `qmreader:contributor:${contributorPage.contributor.id}:comments:${comment.id}`,
+      guid: `zlnews:contributor:${contributorPage.contributor.id}:comments:${comment.id}`,
     };
   });
   const annotations = (contributorPage.annotations || []).map(annotation => {
@@ -1575,7 +1577,7 @@ function contributorFeedItems(req, contributorPage) {
       description: helpfulCount ? `有用 ${helpfulCount} 次｜${baseDescription}` : baseDescription,
       source: preview.author,
       at: Number(preview.at) || 0,
-      guid: `qmreader:contributor:${contributorPage.contributor.id}:annotations:${annotation.id}`,
+      guid: `zlnews:contributor:${contributorPage.contributor.id}:annotations:${annotation.id}`,
     };
   });
   const messages = (contributorPage.messages || []).map(message => {
@@ -1598,7 +1600,7 @@ function contributorFeedItems(req, contributorPage) {
       description: helpfulCount ? `有用 ${helpfulCount} 次｜${baseDescription}` : baseDescription,
       source: [preview.author, preview.model].filter(Boolean).join(' · '),
       at: Number(preview.at) || 0,
-      guid: `qmreader:contributor:${contributorPage.contributor.id}:chat:${message.id}`,
+      guid: `zlnews:contributor:${contributorPage.contributor.id}:chat:${message.id}`,
     };
   });
   return [...translations, ...rewrites, ...annotations, ...comments, ...messages]
@@ -1643,7 +1645,7 @@ function renderAssetFeed(req, type = '') {
   const meta = assetType ? ASSET_DIRECTORY_META[assetType] : null;
   const items = publicAssetFeedItems(req, assetType);
   const sortPrefix = sort === 'helpful' ? '有用 · ' : '';
-  const title = meta ? `${sortPrefix}${meta.label}资产 · QMReader` : `${sortPrefix}QMReader 公开资产`;
+  const title = meta ? `${sortPrefix}${meta.label}资产 · 纵览News` : `${sortPrefix}纵览News 公开资产`;
   const description = `${meta ? meta.description : DEFAULT_DESCRIPTION}${sort === 'helpful' ? ' 当前订阅按读者“有用”反馈优先排序。' : ''}`;
   const selfUrl = assetFeedUrl(req, assetType, sort);
   const directoryUrl = assetDirectoryUrl(req, assetType, sort);
@@ -1654,7 +1656,7 @@ function renderContributorFeed(req, contributorPage) {
   const displayName = contributorPage.contributor.displayName || '读者';
   const items = contributorFeedItems(req, contributorPage);
   return renderRssChannel({
-    title: `${displayName} 的公开资产 · QMReader`,
+    title: `${displayName} 的公开资产 · 纵览News`,
     link: contributorPageUrl(req, contributorPage.contributor.id),
     description: `${contributorPage.description} 当前订阅包含该贡献主页的公开翻译、重写、划线点评、点评和文章对话。`,
     selfUrl: contributorFeedUrl(req, contributorPage.contributor.id),
@@ -1790,9 +1792,9 @@ function renderLlmsTxt(req) {
     return `- ${title}\n  URL: ${entryPublicUrl(req, entry)}\n  Assets: ${types || '公开资产'}`;
   });
   return [
-    '# QMReader',
+    '# 纵览News',
     '',
-    'QMReader is a public Chinese RSS reading and knowledge asset site curated around article translation, Qiaomu-style rewrites, inline text annotations, human comments, and article-context AI conversations.',
+    '纵览News is a public Chinese RSS reading and knowledge asset site curated around article translation, AI rewrites, inline text annotations, human comments, and article-context AI conversations.',
     '',
     'Primary language: zh-CN',
     `Canonical site: ${publicUrl(req, '/')}`,
@@ -1801,7 +1803,7 @@ function renderLlmsTxt(req) {
     'Important public directories:',
     `- All public assets: ${assetDirectoryUrl(req)}`,
     `- Chinese translations: ${assetDirectoryUrl(req, 'translation')}`,
-    `- Qiaomu-style rewrites: ${assetDirectoryUrl(req, 'rewrite')}`,
+    `- AI rewrites: ${assetDirectoryUrl(req, 'rewrite')}`,
     `- Inline annotations: ${assetDirectoryUrl(req, 'annotations')}`,
     `- Human comments: ${assetDirectoryUrl(req, 'comments')}`,
     `- Article conversations: ${assetDirectoryUrl(req, 'chat')}`,
@@ -1810,7 +1812,7 @@ function renderLlmsTxt(req) {
     'RSS feeds:',
     `- All public assets: ${assetFeedUrl(req)}`,
     `- Chinese translations: ${assetFeedUrl(req, 'translation')}`,
-    `- Qiaomu-style rewrites: ${assetFeedUrl(req, 'rewrite')}`,
+    `- AI rewrites: ${assetFeedUrl(req, 'rewrite')}`,
     `- Inline annotations: ${assetFeedUrl(req, 'annotations')}`,
     `- Human comments: ${assetFeedUrl(req, 'comments')}`,
     `- Article conversations: ${assetFeedUrl(req, 'chat')}`,
@@ -1839,9 +1841,9 @@ function umamiConfigTag(req) {
     return '';
   }
   if (!/^https:\/\//i.test(src)) return '';
-  let domain = 'rss.qiaomu.ai';
+  let domain = 'localhost';
   try { domain = new URL(publicUrl(req, '/')).hostname || domain; } catch { /* use production default */ }
-  return `<meta name="qmreader-analytics" data-src="${escapeHtml(src)}" data-website-id="${escapeHtml(UMAMI_WEBSITE_ID)}" data-domains="${escapeHtml(domain)}" />`;
+  return `<meta name="zlnews-analytics" data-src="${escapeHtml(src)}" data-website-id="${escapeHtml(UMAMI_WEBSITE_ID)}" data-domains="${escapeHtml(domain)}" />`;
 }
 
 app.get('/purify.min.js', (req, res) => {
@@ -2264,7 +2266,7 @@ function queueSubmittedRewrite(entry) {
       const latest = fetcher.getEntryById(entry.id) || entry;
       const prepared = await prepareEntryForAiAsset(latest, 'Submitted link rewrite');
       await deepseek.rewriteEntry(prepared.entry, {
-        author: '向阳乔木',
+        author: store.getPersonalDisplayName(),
         temperature: 0.6,
         maxTokens: 9000,
       });
@@ -2454,7 +2456,7 @@ function startFetchJob(job = {}) {
 
   const worker = fork(REFRESH_WORKER_PATH, [], {
     cwd: __dirname,
-    env: { ...process.env, QMREADER_WORKER_KIND: 'fetch' },
+    env: { ...process.env, ZLNEWS_WORKER_KIND: 'fetch' },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   refreshWorker = worker;
@@ -2554,7 +2556,7 @@ function startAutoRewriteJob(job = {}) {
 
   const worker = fork(REFRESH_WORKER_PATH, [], {
     cwd: __dirname,
-    env: { ...process.env, QMREADER_WORKER_KIND: 'ai' },
+    env: { ...process.env, ZLNEWS_WORKER_KIND: 'ai' },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   aiWorker = worker;
@@ -2990,11 +2992,21 @@ app.patch('/api/me/profile', requirePersonalIdentity, (req, res) => {
       avatarUrl: req.body && req.body.avatarUrl,
       links: req.body && req.body.links,
       defaultReaderTab: req.body && req.body.defaultReaderTab,
+      rewritePrompt: req.body && req.body.rewritePrompt,
     });
     res.json({ user });
   } catch (e) {
     sendError(res, e, 'profile update failed');
   }
+});
+
+// 改写提示词预设：供设置界面展示原版内容，作为自定义的起点。
+app.get('/api/me/rewrite-prompts', requirePersonalIdentity, (req, res) => {
+  res.json({
+    presets: rewritePrompts.PRESETS,
+    limit: rewritePrompts.CUSTOM_PROMPT_LIMIT,
+    setting: store.getRewritePromptSetting(),
+  });
 });
 
 app.get('/api/me/notifications', requirePersonalIdentity, (req, res) => {
@@ -3771,9 +3783,14 @@ app.post('/api/sources/:id/toggle', requireAdmin, async (req, res) => {
 });
 
 const httpServer = app.listen(PORT, HOST, () => {
-  console.log(`QMReader listening on http://${HOST}:${httpServer.address().port}`);
+  console.log(`zlnews listening on http://${HOST}:${httpServer.address().port}`);
   store.getPersonalUser();
   fetcher.loadDisk();
+  try {
+    fetcher.repairXArticleEntries();
+  } catch (error) {
+    console.warn('[x-article] repair skipped:', error.message || error);
+  }
   scheduleStartupRefresh();
   scheduleDailyRefresh();
   offlinePrefetch.scheduleOfflinePrefetch();

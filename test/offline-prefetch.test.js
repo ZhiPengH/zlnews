@@ -4,8 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-offline-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-offline-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 
 const offlinePrefetch = require('../lib/offline-prefetch');
 const store = require('../lib/store');

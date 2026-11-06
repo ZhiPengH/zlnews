@@ -12,7 +12,7 @@ test('new HTML uses content hashes instead of legacy immutable URLs; only matchi
   const root = path.join(__dirname, '..');
   const child = spawn(process.execPath, ['server.js'], {
     cwd: root,
-    env: { ...process.env, QMREADER_DATA_DIR: dir, QMREADER_DB_FILE: path.join(dir, 'qmreader.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1' },
+    env: { ...process.env, ZLNEWS_DATA_DIR: dir, ZLNEWS_DB_FILE: path.join(dir, 'zlnews.sqlite'), HOST: '127.0.0.1', PORT: '0', STARTUP_REFRESH_DELAY_MS: '-1', FRESHNESS_SWEEP_INTERVAL_MS: '-1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   try {

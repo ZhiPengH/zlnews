@@ -1,7 +1,7 @@
 services:
-  qmreader:
+  zlnews:
     build: .
-    container_name: qiaomu-qmreader
+    container_name: zlnews
     restart: unless-stopped
     env_file:
       - .env

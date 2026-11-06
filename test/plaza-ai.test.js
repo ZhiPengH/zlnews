@@ -4,9 +4,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-plaza-ai-test-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
-process.env.QMREADER_DB_FILE = path.join(testDataDir, 'qmreader.sqlite');
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-plaza-ai-test-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
+process.env.ZLNEWS_DB_FILE = path.join(testDataDir, 'zlnews.sqlite');
 
 // deepseek loads dotenv on import; never read developer credentials in this suite.
 const readFileSync = fs.readFileSync;

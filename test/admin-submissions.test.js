@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qmreader-admin-submissions-'));
-process.env.QMREADER_DATA_DIR = testDataDir;
+const testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zlnews-admin-submissions-'));
+process.env.ZLNEWS_DATA_DIR = testDataDir;
 delete process.env.ADMIN_EMAIL;
 delete process.env.ADMIN_PASSWORD;
 delete process.env.ADMIN_NAME;
@@ -16,7 +16,7 @@ const store = require('../lib/store');
 // Historical identities are fixtures, not a production account-creation API.
 function fixtureUser({ email, displayName, role = 'user' }) {
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(testDataDir, 'qmreader.sqlite'));
+  const db = new DatabaseSync(path.join(testDataDir, 'zlnews.sqlite'));
   const id = require('node:crypto').randomUUID();
   const t = Date.now();
   db.prepare(`INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, updated_at)
@@ -59,7 +59,7 @@ function waitForServer(child, timeout = 10000) {
     let stderr = '';
     child.stderr.on('data', chunk => { stderr += chunk; });
     child.stdout.on('data', chunk => {
-      if (String(chunk).includes('QMReader listening')) {
+      if (String(chunk).includes('zlnews listening')) {
         clearTimeout(timer);
         resolve();
       }
@@ -225,7 +225,7 @@ test('personal HTTP identity cannot gain admin privileges from cookies or legacy
   const admin = fixtureUser({ email: uniqueEmail('legacy-admin'), displayName: 'Legacy Admin', role: 'admin' });
   const token = 'historical-admin-session';
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(testDataDir, 'qmreader.sqlite'));
+  const db = new DatabaseSync(path.join(testDataDir, 'zlnews.sqlite'));
   db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
     .run(require('node:crypto').createHash('sha256').update(token).digest('hex'), admin.id, Date.now() + 60000, Date.now());
   db.close();

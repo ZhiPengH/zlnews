@@ -16,7 +16,7 @@ if PID=$(lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null); then
   fi
 else
   echo "启动预览服务（端口 ${PORT}，日志 /tmp/zonglan-news-preview.log）…"
-  QMREADER_DATA_DIR="$DATA_DIR" HOST=127.0.0.1 PORT="$PORT" PUBLIC_ORIGIN= \
+  ZLNEWS_DATA_DIR="$DATA_DIR" HOST=127.0.0.1 PORT="$PORT" PUBLIC_ORIGIN= \
     STARTUP_REFRESH_DELAY_MS=-1 FRESHNESS_SWEEP_INTERVAL_MS=-1 TWITTER_SWEEP_INTERVAL_MS=-1 \
     nohup node server.js > /tmp/zonglan-news-preview.log 2>&1 &
   for i in $(seq 1 20); do

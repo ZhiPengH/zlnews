@@ -1,4 +1,4 @@
-/* QMReader front-end */
+/* 纵览News front-end */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
@@ -105,7 +105,7 @@ const AI_READING_TASKS = [
     group: '写作',
     items: [
       ['分享文案', '帮我写一段适合发到 X / 即刻的中文分享文案，短一点但有观点。'],
-      ['选题角度', '如果向阳乔木要基于这篇文章写一篇中文内容，最有传播潜力的切入角度有哪些？给 3 个。'],
+      ['选题角度', '如果要基于这篇文章写一篇中文内容，最有传播潜力的切入角度有哪些？给 3 个。'],
     ],
   },
   {
@@ -454,9 +454,9 @@ function rewriteUiCopy(entry = state.activeEntry) {
       empty: '这篇论文还没有 AI 解读。',
       copyTitle: '复制论文解读',
       copied: '论文解读已复制',
-      generateTitle: '生成乔木风格论文解读',
-      updateTitle: '更新乔木风格论文解读',
-      redoTitle: '重新生成乔木风格论文解读',
+      generateTitle: '生成论文解读',
+      updateTitle: '更新论文解读',
+      redoTitle: '重新生成论文解读',
       saved: '论文解读已保存',
       cached: '已显示缓存解读',
       fetched: '已获取论文页面并保存解读',
@@ -873,20 +873,20 @@ function splitArticleLocator(locator) {
 function listRouteTitle(view = state.view, assetFilter = state.assetFilter, q = state.q) {
   if (view === 'hot') return '广场 · 纵览News';
   if (view === 'favorites') {
-    return q ? `最爱 · “${q}” · QMReader` : '最爱 · QMReader';
+    return q ? `最爱 · “${q}” · 纵览News` : '最爱 · 纵览News';
   }
   if (view === 'assets') {
     const sortPrefix = state.assetSort === 'helpful' ? '有用 · ' : '';
     const prefix = `${sortPrefix}${assetFilter ? `${assetDirectoryLabel(assetFilter)}资产` : '公开资产'}`;
-    return q ? `${prefix} · “${q}” · QMReader` : `${prefix} · QMReader`;
+    return q ? `${prefix} · “${q}” · 纵览News` : `${prefix} · 纵览News`;
   }
-  return 'QMReader · RSS 阅读器';
+  return '纵览News · RSS 阅读器';
 }
 
 function readerRouteTitle(entry = state.activeEntry, focus = state.readerFocus) {
   const title = entry ? (entry.titleZh || entry.title || '文章') : '文章';
   const prefix = focus && ASSET_FOCUS_LABELS[focus] ? `${ASSET_FOCUS_LABELS[focus]} · ` : '';
-  return `${prefix}${title} · QMReader`;
+  return `${prefix}${title} · 纵览News`;
 }
 
 function readerUrlFor(entry = state.activeEntry, tab = state.readerTab, focus = state.readerFocus, assetId = state.readerAssetId) {
@@ -1103,7 +1103,7 @@ function syncListUrl({ replace = false } = {}) {
 
 function clearReaderUrl({ replace = true } = {}) {
   const url = readerUrlFor(null);
-  document.title = 'QMReader · RSS 阅读器';
+  document.title = '纵览News · RSS 阅读器';
   if (url.href === window.location.href) return;
   const method = replace ? 'replaceState' : 'pushState';
   history[method]({ entryId: null }, '', url);
@@ -4452,7 +4452,7 @@ function personaInitialMessages() {
   return (state.agentMessages || [])
     .filter(message => message && (message.role === 'user' || message.role === 'assistant') && String(message.content || '').trim())
     .map((message, index) => ({
-      id: message.id || `qmreader-${state.activeEntry?.id || 'entry'}-${index}`,
+      id: message.id || `zlnews-${state.activeEntry?.id || 'entry'}-${index}`,
       role: message.role,
       content: String(message.content || ''),
       createdAt: personaMessageDate(message.createdAt),
@@ -4516,7 +4516,7 @@ async function personaCustomFetch(_url, init = {}, payload = {}) {
 
 function createPersonaPromptPlugin() {
   return {
-    id: 'qmreader-prompt-row',
+    id: 'zlnews-prompt-row',
     renderComposer({ defaultRenderer, onSubmit, streaming }) {
       const root = document.createElement('div');
       root.className = 'persona-qm-composer';
@@ -6685,7 +6685,7 @@ async function openMyCommentsModal({ push = true, tab = state.dashboardTab } = {
   }
   setWorkspacePage('dashboard');
   setDashboardTab(tab, { persist: true, push: false });
-  document.title = '个人后台 · QMReader';
+  document.title = '个人后台 · 纵览News';
   if (push) history.pushState({ dashboard: true, tab: state.dashboardTab }, '', dashboardUrlFor(state.dashboardTab));
   renderProfileEditor();
   loadNotifications();
@@ -6909,11 +6909,11 @@ function syncContributorUrl({ replace = true } = {}) {
 
 function contributorPageTitle() {
   const profile = state.contributor.profile;
-  if (!profile) return '贡献主页 · QMReader';
+  if (!profile) return '贡献主页 · 纵览News';
   const sortPrefix = state.contributor.sort === 'helpful' ? '有用 · ' : '';
   const tab = normalizeUserAssetTab(state.contributor.tab);
   const label = tab === 'translation' ? '公开资产' : userAssetLabel(tab);
-  return `${sortPrefix}${profile.displayName} 的${label} · QMReader`;
+  return `${sortPrefix}${profile.displayName} 的${label} · 纵览News`;
 }
 
 function renderContributorProfile() {
@@ -7834,7 +7834,7 @@ function closeReaderFromRoute({ rerenderList = true } = {}) {
   renderAdminEntryControls();
   document.getElementById('app').classList.remove('reading');
   applyReaderPrefs();
-  document.title = 'QMReader · RSS 阅读器';
+  document.title = '纵览News · RSS 阅读器';
   if (rerenderList) renderList();
   renderAgent();
 }
@@ -8632,7 +8632,7 @@ async function openAdminPage({ push = true } = {}) {
   }
   setWorkspacePage('admin');
   state.activeEntry = null;
-  document.title = '系统后台 · QMReader';
+  document.title = '系统后台 · 纵览News';
   renderAdminPage();
   if (push) {
     const url = adminUrlFor();
