@@ -2189,7 +2189,7 @@ button:disabled { cursor: not-allowed; opacity: 0.62; }
   gap: 10px;
 }
 .reader-title-copy { min-width: 0; }
-.reader h1 { font-size: 26px; line-height: 1.35; letter-spacing: 0; }
+.reader h1 { font-size: 19px; line-height: 1.35; letter-spacing: 0; }
 .reader-title-link {
   color: inherit;
   text-decoration: none;
@@ -6632,7 +6632,7 @@ button:disabled { cursor: not-allowed; opacity: 0.62; }
   .reader-open-btn {
     justify-self: start;
   }
-  .reader h1 { font-size: 22px; }
+  .reader h1 { font-size: 18px; }
   .reader-title-zh { font-size: 16px; }
   .reader-toolbar {
     align-items: stretch;
