@@ -79,6 +79,32 @@ test('startup repair clears a leftover chrome summary on image-only tweets', () 
   assert.equal(store.getEntry('78').content, '<br><img src="https://pbs.twimg.com/media/A">');
 });
 
+test('startup repair clears avatar covers on plain X posts and keeps real media covers', () => {
+  const AVATAR = 'https://pbs.twimg.com/profile_images/1/a_400x400.jpg';
+  const MEDIA = 'https://pbs.twimg.com/media/B?format=jpg&amp;name=orig';
+  store.upsertEntries([
+    tweet('79', { image: AVATAR }),
+    tweet('80', { image: MEDIA }),
+    { ...tweet('81', { image: AVATAR }), link: 'https://example.com/post/81' },
+  ]);
+  // 正文外壳与头像封面同时存在：还原正文后封面也要清掉
+  store.upsertEntries([tweet('82', { image: AVATAR })]);
+  store.updateEntryContent('82', { content: CHROME });
+
+  const result = fetcher.repairPlainXPostEntries();
+  assert.equal(result.fixed, 2);
+  assert.equal(store.getEntry('79').image, null);
+  assert.equal(store.getEntry('82').image, null);
+  assert.equal(store.getEntry('82').content.includes('Log in'), false);
+  assert.equal(store.getEntry('80').image, MEDIA);
+  assert.equal(store.getEntry('81').image, AVATAR, '非推文条目不处理');
+
+  // 之后的 RSS 刷新不给封面，也不会把头像带回来
+  store.upsertEntries([tweet('79')]);
+  assert.equal(store.getEntry('79').image, null);
+  assert.deepEqual(fetcher.repairPlainXPostEntries(), { fixed: 0, skipped: 0 });
+});
+
 test('ordinary entries pass through untouched', () => {
   const plain = { id: 'n', sourceId: 'cdt', title: '普通推文', summary: 's' };
   assert.equal(fetcher.keepXArticleMeta([plain])[0], plain);
