@@ -46,6 +46,39 @@ test('a later RSS refresh keeps the repaired title instead of the link', () => {
   assert.ok(store.getEntry('fetched').content.includes('<h1>'), 'longer stored content survives the upsert');
 });
 
+const CHROME = '<h2>Post</h2><a href="https://x.com/i/jf/onboarding/web?mode=login">Log in</a>'
+  + `<h1>包叔 on X: "${'推文正文。'.repeat(80)}"</h1><h2>Conversation</h2>`
+  + '<a href="https://x.com/baoshu88">@baoshu88</a>' + '推文正文。'.repeat(80)
+  + '<a href="https://x.com/baoshu88/status/77">3:20 AM</a>';
+const tweet = (id, extra = {}) => ({
+  id, sourceId: 'baoshu', title: '推文正文。', link: `https://x.com/baoshu88/status/${id}`,
+  summary: '推文正文。', content: '推文正文。'.repeat(80), publishedTs: 2, ...extra,
+});
+
+test('RSS content wins over longer stored page chrome for plain X posts', () => {
+  store.upsertEntries([tweet('77', { content: CHROME })]);
+  store.upsertEntries([tweet('77')]);
+  assert.equal(store.getEntry('77').content, '推文正文。'.repeat(80));
+});
+
+test('startup repair restores plain X posts still holding page chrome, once', () => {
+  store.upsertEntries([tweet('77')]);
+  store.updateEntryContent('77', { content: CHROME });
+  assert.equal(fetcher.repairPlainXPostEntries().fixed, 1);
+  const restored = store.getEntry('77');
+  assert.equal(restored.content, '推文正文。'.repeat(80));
+  assert.equal(restored.content.includes('Log in'), false);
+  assert.deepEqual(fetcher.repairPlainXPostEntries(), { fixed: 0, skipped: 0 });
+});
+
+test('startup repair clears a leftover chrome summary on image-only tweets', () => {
+  store.upsertEntries([tweet('78', { content: '<br><img src="https://pbs.twimg.com/media/A">', summary: '' })]);
+  store.replaceEntrySummary('78', 'Post Log in Sign up Post Log in Sign up 包叔 on X 包叔 @baoshu88 8:05 PM');
+  assert.equal(fetcher.repairPlainXPostEntries().fixed, 1);
+  assert.equal(store.getEntry('78').summary, '');
+  assert.equal(store.getEntry('78').content, '<br><img src="https://pbs.twimg.com/media/A">');
+});
+
 test('ordinary entries pass through untouched', () => {
   const plain = { id: 'n', sourceId: 'cdt', title: '普通推文', summary: 's' };
   assert.equal(fetcher.keepXArticleMeta([plain])[0], plain);

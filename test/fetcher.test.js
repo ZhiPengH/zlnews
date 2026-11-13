@@ -12,6 +12,12 @@ const fetcher = require('../lib/fetcher');
 
 after(() => fs.rmSync(testDataDir, { recursive: true, force: true }));
 
+test('fetchEntryOriginal keeps RSS content for plain X posts without touching the network', async () => {
+  // 原样返回同一个对象：真去抓或写库，返回的会是库里更新后的新对象（或抛错）。
+  const entry = { id: 'tweet-keep', title: '推文', link: 'https://x.com/someone/status/2121166197823590462', content: '<p>完整推文</p>' };
+  assert.equal(await fetcher.fetchEntryOriginal(entry), entry);
+});
+
 function runLookup(lookup, hostname, options = {}) {
   return new Promise((resolve, reject) => {
     lookup(hostname, options, (error, address, family) => {

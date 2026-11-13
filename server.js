@@ -11,6 +11,7 @@ const store = require('./lib/store');
 const subscriptions = require('./lib/subscriptions');
 const routing = require('./lib/rsshub-routing');
 const twitterRefresh = require('./lib/twitter-refresh');
+const xArticle = require('./lib/x-article');
 const runtimeEnv = require('./lib/runtime-env');
 const rewritePrompts = require('./lib/rewrite-prompts');
 const { rankPlazaEntries } = require('./lib/plaza');
@@ -2133,6 +2134,7 @@ function entryPlainText(entry) {
 
 function shouldAutoFetchOriginal(entry) {
   if (!entry || !/^https?:\/\//i.test(entry.link || '')) return false;
+  if (xArticle.isPlainXPost(entry)) return false;
   if (entry.sourceId === 'hackernews') {
     return !entry.originalFetchedAt && !/news\.ycombinator\.com\/item\?/i.test(entry.link || '');
   }
@@ -3790,6 +3792,11 @@ const httpServer = app.listen(PORT, HOST, () => {
     fetcher.repairXArticleEntries();
   } catch (error) {
     console.warn('[x-article] repair skipped:', error.message || error);
+  }
+  try {
+    fetcher.repairPlainXPostEntries();
+  } catch (error) {
+    console.warn('[x-post] repair skipped:', error.message || error);
   }
   scheduleStartupRefresh();
   scheduleDailyRefresh();

@@ -51,6 +51,7 @@ test('selection keeps newest fetchable entries, skips rich content and recent fa
     { id: 'no-link', link: '', summary: 's', content: '', publishedTs: 600 },
     { id: 'newest', link: 'https://example.org/newest', summary: 's', content: '', publishedTs: 700 },
     { id: 'mid', link: 'https://example.org/mid', summary: 's', content: '', publishedTs: 300 },
+    { id: 'tweet', link: 'https://x.com/someone/status/1', summary: 's', content: '<p>短推文</p>', publishedTs: 800 },
   ];
   const picked = offlinePrefetch.selectOfflinePrefetchEntries(entries, { limit: 2, nowMs: now });
   assert.deepEqual(picked.map(entry => entry.id), ['newest', 'old-fail']);
