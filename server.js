@@ -2292,6 +2292,13 @@ function notifyTarget(target, actor, { type, objectType, entryId, fallbackMessag
   });
 }
 
+// 用户主动对某个订阅源发起的刷新：不受文章保留期限制，能拉回超期旧文（见 lib/retention.js）。
+// 定时刷新、推特轮询、点开订阅源时的顺带刷新、「刷新全部」都按自动刷新处理。
+const MANUAL_REFRESH_REASONS = new Set([
+  'manual-refresh', 'user-refresh', 'source-enabled',
+  'subscription-update', 'subscription-retry', 'subscription-import',
+]);
+
 function normalizeBackgroundJob(job = {}) {
   const kind = String(job.kind || 'refresh').trim();
   const sourceId = String(job.sourceId || '').trim();
@@ -2304,6 +2311,7 @@ function normalizeBackgroundJob(job = {}) {
     sourceId,
     sourceIds,
     reason,
+    manual: MANUAL_REFRESH_REASONS.has(reason),
     fetchOnly: Boolean(job.fetchOnly),
     limit: Number.isFinite(Number(job.limit)) && Number(job.limit) > 0 ? Math.min(Math.floor(Number(job.limit)), 100) : 0,
     requestedAt: Date.now(),
@@ -2777,6 +2785,21 @@ function scheduleStartupRefresh() {
   setTimeout(() => {
     doRefreshAll();
   }, delay);
+}
+
+// 文章保留期清理：启动 2 分钟后跑一次，此后每天一次（期限见 lib/retention.js）。
+const RETENTION_FIRST_DELAY_MS = 2 * 60 * 1000;
+const RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+function scheduleRetention(delay = RETENTION_FIRST_DELAY_MS) {
+  const timer = setTimeout(() => {
+    try {
+      fetcher.pruneExpiredEntries();
+    } catch (error) {
+      console.warn('[retention] skipped:', error.message || error);
+    }
+    scheduleRetention(RETENTION_INTERVAL_MS);
+  }, delay);
+  if (typeof timer.unref === 'function') timer.unref();
 }
 
 function scheduleFreshnessRefresh() {
@@ -3760,6 +3783,7 @@ app.post('/api/refresh', requirePersonalIdentity, async (req, res) => {
       kind: 'refresh',
       sourceId: src.id,
       sourceIds: [src.id],
+      reason: 'user-refresh',
     });
     return res.json({ started: result.started, running: result.running, job: result.job, progress: result.progress, autoRewrite: result.autoRewrite });
   }
@@ -3780,6 +3804,7 @@ app.post('/api/sources/:id/toggle', requireAdmin, async (req, res) => {
     kind: 'refresh',
     sourceId: src.id,
     sourceIds: [src.id],
+    reason: 'source-enabled',
   });
   res.json({ id: src.id, enabled });
 });
@@ -3803,4 +3828,5 @@ const httpServer = app.listen(PORT, HOST, () => {
   offlinePrefetch.scheduleOfflinePrefetch();
   scheduleFreshnessRefresh();
   scheduleTwitterRefresh();
+  scheduleRetention();
 });
